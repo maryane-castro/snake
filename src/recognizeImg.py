@@ -79,6 +79,8 @@ def recognizeText(input_img_path = None,output_txt_path = None,ocr_name = None,d
         x2 = int(x0 - 1000 * (-b))
         y2 = int(y0 - 1000 * (a))
         cv2.line(edge_bw2, (x1, y1), (x2, y2), 255, 1)
+
+    edge_bw2 = cv2.filter2D(edge_bw2, -1, kernel)
     show(edge_bw2)
 
 
@@ -107,4 +109,4 @@ def recognizeText(input_img_path = None,output_txt_path = None,ocr_name = None,d
 
 
 
-recognizeText("img/capture/00.png", "img/ideal")
+recognizeText("img/capture/0.jpg", "img/ideal")

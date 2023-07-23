@@ -1,11 +1,9 @@
 import cv2
-import numpy as np
 from scipy import ndimage
-
-
+import numpy as np
 
 def show(img):
-    proporcao = 0.8
+    proporcao = 0.3
     nova_largura = int(img.shape[1] * proporcao)
     nova_altura = int(img.shape[0] * proporcao)
     imagem_redimensionada = cv2.resize(img, (nova_largura, nova_altura))
@@ -13,129 +11,90 @@ def show(img):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+img_path = "img/capture/01.jpg"
+img = cv2.imread(img_path, 0)
+img1 = cv2.imread(img_path)
 
-#out = cv2.normalize(im_gr.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX) 
-#equvalente a im2double
-def im2double(im):
-    min_val = np.min(im.ravel())
-    max_val = np.max(im.ravel())
-    out = (im.astype('float') - min_val) / (max_val - min_val)
-    return out
+kernel = 2
+thr_canny = 0.1
+sig_canny = 1
+theta_resolution = 90
+rho_resolution = 1
 
+img = cv2.filter2D(img, -1, kernel)
+img = ndimage.median_filter(img, size=(7, 7))
+img = cv2.Canny(img, int(thr_canny * 255), int(sig_canny * 255))
+lines = cv2.HoughLines(img, 1.5, np.pi / 180, 120, None, 3, 0)
 
-def recognizeText(input_img_path = None,output_txt_path = None,ocr_name = None,dataset = None,flgPlot = None):
-    thr_canny = 0.1
-    sz_canny = 3
-    sig_canny = 1
-    hz_ang = 15
-    vt_ang = 15
-    wnd_sz = 3
-    edg_den_low = 0.2
-    edg_den_up = 0.5
-    thr_area = np.array([1 / 20 * 1 / 15,1 / 2])
-    thr_oriAng = 10
-    thr_solidity = 0.65
-    thr_text_hei = 20
+vertical_lines = []
+horizontal_lines = []
 
+for line in lines:
+    rho, theta = line[0]
+    angle_degrees = np.degrees(theta)
 
-    # plotBound = flgPlot(1)
-    # plotHomo = flgPlot(2)
-    # plotObj = flgPlot(3)
+    # Identificar linhas verticais e horizontais
+    if 85 <= angle_degrees <= 95:
+        horizontal_lines.append(line)
+    elif 175 <= angle_degrees <= 185:
+        vertical_lines.append(line)
 
-    img = cv2.imread(input_img_path, 0)
-    im_gr = img.astype(float) / 255.0
+intersection_points = []
 
+# Encontrar os pontos de interseção entre as linhas
+for h_line in horizontal_lines:
+    for v_line in vertical_lines:
+        rho_h, theta_h = h_line[0]
+        rho_v, theta_v = v_line[0]
 
+        A = np.array([[np.cos(theta_h), np.sin(theta_h)], [np.cos(theta_v), np.sin(theta_v)]])
+        B = np.array([rho_h, rho_v])
+        intersection_point = np.linalg.solve(A, B)
+        intersection_points.append(intersection_point)
 
-    b_found_lines = np.array([[False,False],[False,False]])
-    thetas_mm = np.array([[0,0],[0,0]])
-    rhos_mm = np.array([[0,0],[0,0]])
-    hei,wid = im_gr.shape
+# # Desenhar os pontos de interseção na imagem
+# for point in intersection_points:
+#     x, y = map(int, point)
+#     cv2.circle(img, (x, y), 5, 255, -1)
 
-    im_gr_med = ndimage.median_filter(im_gr, size=(7, 7))
-    im_gr_med = (255 * (im_gr_med - im_gr_med.min()) / (im_gr_med.max() - im_gr_med.min())).astype('uint8')
+# Criar uma imagem preta para desenhar os pontos de interseção
+result_img = np.zeros_like(img)
 
-
-    edge_bw = cv2.Canny(im_gr_med, int(thr_canny * 255), int(sig_canny * 255))
-    
-    
-
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
-    edge_bw2 = cv2.dilate(edge_bw, kernel)
-    
-    theta_resolution = 90
-    rho_resolution = 3
-    lines = cv2.HoughLines(edge_bw2, rho_resolution,  np.pi / 180 * theta_resolution, 6)
-
-    # Desenhar as linhas detectadas na imagem original (opcional)
-    for line in lines:
-        rho, theta = line[0]
-        a = np.cos(theta)
-        b = np.sin(theta)
-        x0 = a * rho
-        y0 = b * rho
-        x1 = int(x0 + 1000 * (-b))
-        y1 = int(y0 + 1000 * (a))
-        x2 = int(x0 - 1000 * (-b))
-        y2 = int(y0 - 1000 * (a))
-        cv2.line(edge_bw2, (x1, y1), (x2, y2), 255, 1)
-    show(edge_bw2)
-
-    # lines = cv2.HoughLines(edge_bw2, 4, 1, None)
-    # for line in lines:
-    #     rho, theta = line[0]
-
-    # t_range_vt = theta > np.logical_and(- vt_ang,theta) < vt_ang
-    # t_range_hz = theta > np.logical_or((90 - hz_ang),theta) < (hz_ang - 90)
-    # r_range_vt = rho >= np.logical_and(- 0.3 * wid,rho) <= 1.3 * wid
-    # r_range_hz = rho >= np.logical_and(- hei,rho) <= hei
-
-    # H1 = lines[r_range_hz,t_range_hz]
-    # H2 = lines[r_range_vt,t_range_vt]
-    # T1 = theta[t_range_hz]
-    # T2 = theta[t_range_vt]
-    # R1 = rho[r_range_hz]
-    # R2 = rho[r_range_vt]
-
-
-    # line_quad = np.zeros((8,2))
-    # d_rhos = np.zeros((2,1))
-    # for j in np.arange(1,2+1).reshape(-1):
-    #     # Choose the hor or vert line
-    #     if j == 1:
-    #         hou = H1
-    #         Tt = T1
-    #         Rt = R1
-    #     else:
-    #         hou = H2
-    #         Tt = T2
-    #         Rt = R2
-    #     # Find the lines of hough transform
-    #     P = cv2.HoughLinesP(hou)
-
-
-    
-
-
-    
-   
-    
-    
-    
+# Desenhar os pontos de interseção na imagem resultante
+for point in intersection_points:
+    x, y = map(int, point)
+    cv2.circle(result_img, (x, y), 5, 255, -1)
 
 
 
 
+# Aplicar dilatação nos pontos de interseção
+kernel_dilate = np.ones((3, 3), np.uint8)
+result_img = cv2.dilate(result_img, kernel_dilate, iterations=1)
 
-    
-
-    
-
-
-    
+#show(result_img)
 
 
 
+cnts = cv2.findContours(result_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+cnts = cnts[0] if len(cnts) == 2 else cnts[1]
 
 
-recognizeText("img/capture/0.jpg", "img/ideal")
+ROI_number = 0
+roi_arr = []
+shapes = []
+
+for c in cnts:
+    area = cv2.contourArea(c)
+    if area > 1000:
+
+        x,y,w,h = cv2.boundingRect(c)
+        cv2.rectangle(img1, (x, y), (x + w, y + h), (36,255,12), 3)
+        ROI = img1[y:y+h, x:x+w]
+        shapes.append(img1[y:y+h, x:x+w].shape)
+        # cv2.imwrite('ROI_{}.png'.format(ROI_number), ROI)
+        roi_arr.append(ROI)
+        ROI_number += 1
+
+
+show(img1)
