@@ -1,8 +1,18 @@
-from .recognizeImg import recognizeImg
+from PIL import Image
 
-input_image = "img/capture/1.jpg"
-output_image = "img/ideal"
+img = Image.open("dragon.png")
+
+#exibe ela
+img.show()
+
+#amplia para 800x600
 
 
-recognizeImg(input_image, output_image)
+novaresolucao = ()
 
+img2 = img.resize((800,600))
+img2.show()
+
+#amplia com antialiasing
+img3 = img.resize((800,600),Image.ANTIALIAS)
+img3.show()

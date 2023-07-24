@@ -11,7 +11,8 @@ def show(img):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-img_path = "img/capture/01.jpg"
+img_path = "img/capture/3.jpg"
+
 img = cv2.imread(img_path, 0)
 img1 = cv2.imread(img_path)
 
