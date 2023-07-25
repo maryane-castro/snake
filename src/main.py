@@ -1,18 +1,21 @@
-from PIL import Image
+import speech_recognition as sr
 
-img = Image.open("dragon.png")
+def ouvir_e_escrever():
+    recognizer = sr.Recognizer()
 
-#exibe ela
-img.show()
+    with sr.Microphone() as source:
+        print("Diga algo...")
+        recognizer.adjust_for_ambient_noise(source)  # Ajusta o nível de ruído ambiente
+        audio = recognizer.listen(source)
 
-#amplia para 800x600
+    try:
+        print("Reconhecendo...")
+        texto = recognizer.recognize_google(audio, language="pt-BR")  # Reconhece a fala em Português do Brasil
+        print("Você disse: ", texto)
+    except sr.UnknownValueError:
+        print("Não foi possível entender o que você disse.")
+    except sr.RequestError as e:
+        print(f"Não foi possível acessar o serviço de reconhecimento de voz; {e}")
 
-
-novaresolucao = ()
-
-img2 = img.resize((800,600))
-img2.show()
-
-#amplia com antialiasing
-img3 = img.resize((800,600),Image.ANTIALIAS)
-img3.show()
+if __name__ == "__main__":
+    ouvir_e_escrever()
