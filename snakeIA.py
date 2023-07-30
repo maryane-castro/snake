@@ -182,7 +182,7 @@ while True:
     if len(X_train) >= BATCH_SIZE:
         # Train AI model using collected data
         model.fit(np.array(X_train), np.array(y_train), epochs=NUM_EPOCHS, batch_size=BATCH_SIZE)
-        #model.save("modelo_snakeIA.h5")
+        model.save("modelo_snakeIA.h5")
         # Clear data for the next batch
         X_train = []
         y_train = []
